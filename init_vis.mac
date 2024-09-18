@@ -1,0 +1,12 @@
+# Change the default number of workers (in multi-threading mode) 
+#
+/run/numberOfThreads 4
+
+# Initialize kernel
+#
+/run/geometryModified
+/run/initialize
+
+#
+# Visualization setting
+/control/execute vis.mac
