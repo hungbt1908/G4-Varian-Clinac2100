@@ -11,6 +11,20 @@ double RunAction::diffclock(clock_t clock1, clock_t clock2)
 
 RunAction::RunAction()
 {
+    auto analysisManager = G4AnalysisManager::Instance();
+    analysisManager->SetNtupleMerging(true);
+    analysisManager->CreateNtuple("PrimaryVertex", "Primary Particles Information");
+    analysisManager->CreateNtupleSColumn("particleName");
+    analysisManager->CreateNtupleDColumn("xPos");
+    analysisManager->CreateNtupleDColumn("yPos");
+    analysisManager->CreateNtupleDColumn("zPos");
+    analysisManager->CreateNtupleDColumn("xDir");
+    analysisManager->CreateNtupleDColumn("yDir");
+    analysisManager->CreateNtupleDColumn("zDir");
+    analysisManager->CreateNtupleDColumn("phi");
+    analysisManager->CreateNtupleDColumn("theta");
+    analysisManager->CreateNtupleDColumn("kinetic");
+    analysisManager->FinishNtuple(0);
 }
 
 RunAction::~RunAction()
@@ -23,6 +37,11 @@ void RunAction::BeginOfRunAction(const G4Run * /*run*/)
     time_t beginnow = time(0);
     beginTime = asctime(localtime(&beginnow));
     begin = clock();
+
+    //
+    auto analysisManager = G4AnalysisManager::Instance();
+    G4String fileName = "output.root";
+    analysisManager->OpenFile(fileName);
 }
 
 void RunAction::EndOfRunAction(const G4Run *)
@@ -58,4 +77,8 @@ void RunAction::EndOfRunAction(const G4Run *)
         G4cout << "                                                                                      " << G4endl;
         G4cout << "                                                                                      " << G4endl;
     }
+
+    auto analysisManager = G4AnalysisManager::Instance();
+    analysisManager->Write();
+    analysisManager->CloseFile();
 }

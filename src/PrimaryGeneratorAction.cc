@@ -1,60 +1,64 @@
 #include "PrimaryGeneratorAction.hh"
 
+#include "G4VUserPrimaryGeneratorAction.hh"
 #include "G4ParticleGun.hh"
 #include "G4ParticleTable.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4ios.hh"
 #include "G4Event.hh"
+#include "G4ParticleGun.hh"
 #include "Randomize.hh"
+
+using namespace CLHEP;
 
 PrimaryGeneratorAction::PrimaryGeneratorAction()
 {
-    fParticleGun = new G4ParticleGun(1);
+    particleGun = new G4ParticleGun(1);
 
-    // default particle kinematic
+    // Particle definition
     G4ParticleTable *particleTable = G4ParticleTable::GetParticleTable();
-    G4String particleName;
-    G4ParticleDefinition *particle = particleTable->FindParticle(particleName = "gamma");
-    fParticleGun->SetParticleDefinition(particle);
-    fParticleGun->SetParticleEnergy(6. * MeV);
+    G4String particleName = "e-";
+    G4ParticleDefinition *particle = particleTable->FindParticle(particleName);
+    particleGun->SetParticleDefinition(particle);
 }
 
 PrimaryGeneratorAction::~PrimaryGeneratorAction()
 {
-    delete fParticleGun;
+    delete particleGun;
 }
 
 void PrimaryGeneratorAction::GeneratePrimaries(G4Event *anEvent)
 {
-    // vertex position fixed
-    //
-    G4double x0 = 0. * cm, y0 = 0. * cm, z0 = -200. * cm;
-    fParticleGun->SetParticlePosition(G4ThreeVector(x0, y0, z0));
+    G4double GunRadius = 1.25 * mm;
+    G4double GunMeanEnergy = 5.9 * MeV;
+    G4double GunStdEnergy = 0.051 * MeV;
 
-    // direction uniform in solid angle
-    //
-    // solid angle
-    //
-    G4double alphaMin = 0 * deg; // alpha in [0,pi]
-    G4double alphaMax = 15 * deg;
-    G4double fCosAlphaMin, fCosAlphaMax; // solid angle
-    G4double fPsiMin, fPsiMax;
-    fCosAlphaMin = std::cos(alphaMin);
-    fCosAlphaMax = std::cos(alphaMax);
+    // Direction
+    G4ThreeVector dir;
+    G4double sinTheta, cosTheta, phi;
 
-    fPsiMin = 0 * deg; // psi in [0, 2*pi]
-    fPsiMax = 360 * deg;
+    sinTheta = RandGauss::shoot(0., 0.001);
+    cosTheta = std::sqrt(1 - sinTheta * sinTheta);
+    phi = twopi * G4UniformRand();
+    dir.set(sinTheta * std::cos(phi), sinTheta * std::sin(phi), cosTheta);
+    particleGun->SetParticleMomentumDirection((G4ParticleMomentum)dir);
 
-    G4double cosAlpha = fCosAlphaMin - G4UniformRand() * (fCosAlphaMin - fCosAlphaMax);
-    G4double sinAlpha = std::sqrt(1. - cosAlpha * cosAlpha);
-    G4double psi = fPsiMin + G4UniformRand() * (fPsiMax - fPsiMin);
+    // Beam radius
+    G4ThreeVector pos;
+    G4double rho, alpha;
 
-    G4double ux = sinAlpha * std::cos(psi),
-             uy = sinAlpha * std::sin(psi),
-             uz = cosAlpha;
+    rho = G4UniformRand() * GunRadius;
+    alpha = G4UniformRand() * twopi;
+    pos.setX(rho * std::sin(alpha));
+    pos.setY(rho * std::cos(alpha));
+    pos.setZ(-0.50138 * cm);
+    particleGun->SetParticlePosition(pos * mm);
 
-    fParticleGun->SetParticleMomentumDirection(G4ThreeVector(ux, uy, uz));
+    // Energy distribution
+    G4double ek;
+    ek = RandGauss::shoot(GunMeanEnergy, GunStdEnergy);
+    particleGun->SetParticleEnergy(ek * MeV);
 
-    fParticleGun->GeneratePrimaryVertex(anEvent);
+    particleGun->GeneratePrimaryVertex(anEvent);
 }

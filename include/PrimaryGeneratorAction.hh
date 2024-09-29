@@ -16,7 +16,7 @@ public:
     virtual void GeneratePrimaries(G4Event *);
 
 private:
-    G4ParticleGun *fParticleGun = nullptr;
+    G4ParticleGun *particleGun = nullptr;
 };
 
 #endif
